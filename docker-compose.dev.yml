@@ -1,0 +1,25 @@
+version: "3.7"
+services:
+  cobalt:
+    build:
+      context: .
+      target: cobalt
+    command: "serve --host=0.0.0.0 ${EXTRA_COBALT_ARGUMENTS:-}"
+    init: true
+    user: "${UID:?User ID must be provided.}:${GID:?Group ID must be provided.}"
+    ports:
+      - 3002:3000
+    volumes:
+      - ./site:/site
+  browsersync:
+    build:
+      context: .
+      target: cobalt-browsersync
+    command: --files "*"
+    init: true
+    user: "${UID:?User ID must be provided.}:${GID:?Group ID must be provided.}"
+    ports:
+      - 3000:3000
+      - 3001:3001
+    volumes:
+      - ./site/_site:/site

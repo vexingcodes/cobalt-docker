@@ -1,0 +1,9 @@
+version: "3.4"
+services:
+  webserver:
+    restart: always
+    build:
+      context: .
+      target: cobalt-site-serve
+    ports:
+      - 80:80

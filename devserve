@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Runs the cobalt development server for previewing changes and having things automatically rebuild. This uses
+# docker-compose to run two containers -- the cobalt development server, and a browsersync server.
+#
+# Options:
+#   --background         -- Run the development server in the background and return control to the shell immediately.
+#                           By default the server process runs in the foreground, and ctrl+c is required to end it.
+#   -- [arguments]       -- Any additional arguments to pass to the "cobalt serve" command. This MUST be the last
+#                           argument.
+#
+# Example -- run the development servers in the background while serving drafts.
+#   ./devserve --background -- --drafts
+
+# Defaults for command-line parameters.
+BACKGROUND=
+export EXTRA_COBALT_ARGUMENTS=
+
+# Parse the command-line arguments.
+while [[ ${#} -gt 0 ]]; do
+  case ${1} in
+    --background)
+      BACKGROUND="-d"
+      shift
+      ;;
+    --)
+      shift
+      export EXTRA_COBALT_ARGUMENTS="$@"
+      break
+      ;;
+    *)
+      echo "Unrecognized option: ${1}"
+      exit 1
+      ;;
+  esac
+done
+
+# Determine what directory the currently running script is in.
+SCRIPT_DIR="$(readlink -f "$(dirname "$0")")"
+
+# Make the site build directory if it does not already exist. We need to do this manually. Docker can create the
+# directory, but then it will be owned by root, and we want it to be owned by the current user.
+[[ ! -d "${SCRIPT_DIR}/site/_site" ]] && mkdir -p "${SCRIPT_DIR}/site/_site"
+
+export UID=$(id -u)
+export GID=$(id -g)
+exec docker-compose -f "${SCRIPT_DIR}/docker-compose.dev.yml" up ${BACKGROUND}

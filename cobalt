@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Runs a cobalt command provided via command-line arguments in a cobalt container in the ./site directory.
+
+# Determine what directory the currently running script is in.
+SCRIPT_DIR="$(readlink -f "$(dirname "$0")")"
+
+# Make the site directory if it does not already exist. We need to do this manually. Docker can create the directory,
+# but then it will be owned by root, and we want it to be owned by the current user.
+[[ ! -d "${SCRIPT_DIR}/site" ]] && mkdir -p "${SCRIPT_DIR}/site"
+
+# Build the cobalt/cobalt container if needed.
+docker inspect --type=image cobalt/cobalt >/dev/null || docker build "${SCRIPT_DIR}" --target cobalt --tag cobalt/cobalt
+
+# Run the requested cobalt command in the cobalt container as the currently running user.
+exec docker run --init --rm --volume "${SCRIPT_DIR}/site:/site" --user "$(id -u):$(id -g)" cobalt/cobalt "$@"
